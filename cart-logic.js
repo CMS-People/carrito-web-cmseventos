@@ -6,8 +6,8 @@ window.getCurrentLang = () => {
     return 'es'; 
 };
 
-// var EVENTS_JSON_URL = "https://gist.githubusercontent.com/Lauchis/50b5ece416be0f17df01c554fd70871f/raw/eventos.json?nocache=" + new Date().getTime();
-var EVENTS_JSON_URL = "https://gitlab.com/-/snippets/5980284/raw/main/eventos.json?inline=false&nocache=" + new Date().getTime();
+var EVENTS_JSON_URL = "https://gist.githubusercontent.com/Lauchis/50b5ece416be0f17df01c554fd70871f/raw/eventos.json?nocache=" + new Date().getTime();
+// var EVENTS_JSON_URL = "https://gitlab.com/-/snippets/5980284/raw/main/eventos.json?inline=false&nocache=" + new Date().getTime();
 window.ALL_COUNTRIES = ["Alemania", "Argentina", "Bolivia", "Brasil", "Chile", "Colombia", "Costa Rica", "Ecuador", "El Salvador", "España", "Estados Unidos", "Francia", "Guatemala", "Honduras", "Italia", "México", "Nicaragua", "Otros", "Panamá", "Paraguay", "Perú", "Portugal", "Puerto Rico", "Reino Unido", "República Dominicana", "Uruguay", "Venezuela"].sort();
 
 var ENDPOINTS = {
