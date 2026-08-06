@@ -3,7 +3,7 @@ window.getCurrentLang = () => {
     const path = window.location.pathname;
     if (path.includes('/en')) return 'en';
     if (path.includes('/pt')) return 'pt';
-    return 'es'; 
+    return 'es';
 };
 
 var EVENTS_JSON_URL = "https://gist.githubusercontent.com/CMS-People/389e604db6a04767f0b55edc5b97acd9/raw/eventos.json?nocache=" + new Date().getTime();
@@ -49,12 +49,6 @@ var rf = () => {
     };
 };
 
-window.syncEmbedButtons = () => {
-    document.querySelectorAll('iframe').forEach(i => {
-        try { if (typeof i.contentWindow.updateThisButton === "function") i.contentWindow.updateThisButton() } catch (e) { }
-    });
-};
-
 window.updateCartState = () => {
     rf();
     window.saveCart(window.cartItems);
@@ -84,7 +78,6 @@ window.updateCartState = () => {
         if (D.emptyMsg) D.emptyMsg.style.display = "block";
         if (D.form) D.form.style.display = "none";
     }
-    setTimeout(window.syncEmbedButtons, 100);
 };
 
 window.addToCart = id => {
@@ -109,8 +102,8 @@ window.getEndpoint = () => {
     return ENDPOINTS.latam;
 };
 
-window.toggleCart = o => { 
-    rf(); 
+window.toggleCart = o => {
+    rf();
     window.isCartOpen = typeof o === "boolean" ? o : !window.isCartOpen;
     if (D.cart) D.cart.style.transform = window.isCartOpen ? "translateX(0)" : "translateX(100%)";
     if (D.openBtn) D.openBtn.style.display = window.isCartOpen ? "none" : "flex";
@@ -203,3 +196,4 @@ if (!window.APP_INITIALIZED) {
     window.APP_INITIALIZED = true;
 }
 window.startApp();
+
