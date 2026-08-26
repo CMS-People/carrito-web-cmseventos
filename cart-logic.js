@@ -6,9 +6,17 @@ window.getCurrentLang = () => {
     return 'es';
 };
 
-var EVENTS_JSON_URL = "https://gist.githubusercontent.com/CMS-People/389e604db6a04767f0b55edc5b97acd9/raw/eventos.json?nocache=" + new Date().getTime();
-    // esta era la url del gist de mi GitHub:  "https://gist.githubusercontent.com/Lauchis/50b5ece416be0f17df01c554fd70871f/raw/eventos.json?nocache=" + new Date().getTime();
-// var EVENTS_JSON_URL = "https://gitlab.com/-/snippets/5980284/raw/main/eventos.json?inline=false&nocache=" + new Date().getTime();
+// Antes esto llevaba "?nocache=" + Date.now() para forzar que se ignore
+// cualquier caché y se descargue el JSON entero en cada carga. Se saca el
+// query param y en su lugar el fetch de abajo pide { cache: "no-cache" }:
+// eso obliga a revalidar contra el servidor en CADA carga igual que antes
+// (misma frescura garantizada), pero si el servidor confirma que no cambió
+// (vía ETag), el navegador reusa el cuerpo que ya tenía en vez de volver a
+// bajar el JSON completo. Ver diagnostico-carrito.md, punto 1 de
+// "Optimización de carga", para cómo validar que esto esté funcionando.
+var EVENTS_JSON_URL = "https://gist.githubusercontent.com/CMS-People/389e604db6a04767f0b55edc5b97acd9/raw/eventos.json";
+    // esta era la url del gist de mi GitHub:  "https://gist.githubusercontent.com/Lauchis/50b5ece416be0f17df01c554fd70871f/raw/eventos.json"
+// var EVENTS_JSON_URL = "https://gitlab.com/-/snippets/5980284/raw/main/eventos.json?inline=false";
 window.ALL_COUNTRIES = ["Alemania", "Argentina", "Bolivia", "Brasil", "Chile", "Colombia", "Costa Rica", "Ecuador", "El Salvador", "España", "Estados Unidos", "Francia", "Guatemala", "Honduras", "Italia", "México", "Nicaragua", "Otros", "Panamá", "Paraguay", "Perú", "Portugal", "Puerto Rico", "Reino Unido", "República Dominicana", "Uruguay", "Venezuela"].sort();
 
 var ENDPOINTS = {
@@ -26,7 +34,7 @@ window.isCartOpen = false;
 // --- FUNCIONES DE NÚCLEO ---
 window.loadCart = () => { try { return JSON.parse(localStorage.getItem(KEY)) || [] } catch (e) { return [] } };
 window.saveCart = c => { try { localStorage.setItem(KEY, JSON.stringify(c)) } catch (e) { } };
-window.loadMockEvents = async () => { if (window.MOCK_EVENTS.length > 0) return; try { var r = await fetch(EVENTS_JSON_URL); window.MOCK_EVENTS = await r.json() } catch (e) { } };
+window.loadMockEvents = async () => { if (window.MOCK_EVENTS.length > 0) return; try { var r = await fetch(EVENTS_JSON_URL, { cache: "no-cache" }); window.MOCK_EVENTS = await r.json() } catch (e) { } };
 
 var D = {};
 var rf = () => {
