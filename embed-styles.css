@@ -1,0 +1,298 @@
+/* embed-styles.css
+   CSS compartido entre "embed home.html" y "embed events.html" (CMS Eventos).
+   Antes este bloque estaba duplicado entero en cada uno de los dos embeds,
+   multiplicado x6 copias reales (home/eventos × es/en/pt). Se extrajo acá
+   para que las 6 variantes lo descarguen una sola vez (cacheado por el
+   navegador y por jsDelivr) en lugar de repetirlo inline en cada iframe.
+
+   Lo que NO está acá (queda inline, específico de cada embed):
+   - embed home.html: la regla @media (min-width:1024px) .lg\:grid-cols-3
+   - embed events.html: la regla @media (min-width:1024px) .lg\:grid-cols-4
+     y las reglas .pagination-btn (paginación, solo existe en /eventos)
+
+   Servido vía jsDelivr: https://cdn.jsdelivr.net/gh/Lauchis/cmseventos@main/embed-styles.css
+*/
+
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@100..900&display=swap");
+
+html, body {
+  height: auto !important;
+  min-height: unset !important;
+}
+
+body {
+  font-family: "Montserrat", sans-serif !important;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  overflow-y: visible;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+:root {
+  --primary-color: rgb(253, 130, 4);
+  --primary-color-dark: rgb(220, 110, 0);
+  --primary-light-color: rgb(255, 230, 204);
+  --text-gray-700: #374151;
+}
+
+.card-image-container {
+  width: 100%;
+  padding-top: 25%;
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px 20px 0 0;
+}
+
+.card-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.card-wrapper:hover .card-image {
+  transform: scale(1.05);
+}
+
+.add-to-cart-btn {
+  border: none;
+  cursor: pointer;
+  box-sizing: border-box;
+  border-radius: 9999px;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  font-weight: 600;
+}
+
+.no-underline {
+  border-radius: 9999px;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  font-weight: 600;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: none;
+  box-sizing: border-box;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.py-1 { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+.px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
+.font-medium { font-weight: 500; }
+
+.custom-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 1rem center;
+  background-repeat: no-repeat;
+  background-size: 1.2em 1.2em;
+  padding-right: 3rem;
+  padding-left: 1.5rem;
+  background-color: #111827;
+  color: white;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding-top: 0.4rem;
+  padding-bottom: 0.4rem;
+}
+
+.custom-select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(253, 130, 4, 0.3);
+}
+
+.custom-select:hover {
+  background-color: #1f2937;
+}
+
+/* POPUP VIDEO */
+
+#video-popup-overlay {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  background-color: rgba(0, 0, 0, 0.9) !important;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 99999 !important;
+  padding: 10px;
+  box-sizing: border-box;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+#video-popup-content {
+  position: relative;
+  width: 90vw;
+  max-width: 800px;
+  aspect-ratio: 16 / 9;
+  background: black;
+  border-radius: 10px;
+  overflow: visible;
+  z-index: 100000;
+  margin-top: 50px;
+}
+
+#video-popup-content iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+#close-video-popup {
+  position: absolute;
+  top: -20px;
+  right: -20px;
+  background: var(--primary-color);
+  color: white;
+  border: 2px solid white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  font-size: 1.5rem;
+  font-weight: bold;
+  transition: background 0.3s;
+  z-index: 100001;
+}
+
+#close-video-popup:hover {
+  background: var(--primary-color-dark);
+}
+
+/* Utilidades */
+
+.w-16 { width: 3rem; }
+.h-16 { height: 3rem; }
+.w-5 { width: 1.25rem; }
+.h-5 { height: 1.25rem; }
+.w-4 { width: 1rem; }
+.h-4 { height: 1rem; }
+.rounded-full { border-radius: 9999px; }
+.bg-primary { background-color: var(--primary-color); }
+.text-primary { color: var(--primary-color); }
+.hover\:bg-primary-dark:hover { background-color: var(--primary-color-dark); }
+.bg-primary-light { background-color: var(--primary-light-color); }
+.text-gray-700 { color: var(--text-gray-700); }
+.min-h-screen { min-height: 100vh; }
+.relative { position: relative; }
+.flex { display: flex; }
+.inline-block { display: inline-block; }
+.flex-col { flex-direction: column; }
+.flex-grow { flex-grow: 1; }
+.justify-between { justify-content: space-between; }
+.items-center { align-items: center; }
+.text-center { text-align: center; }
+.flex-1 { flex: 1 1 0%; }
+
+.space-x-3 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-x-reverse: 0;
+  margin-right: calc(0.75rem * var(--tw-space-x-reverse));
+  margin-left: calc(0.75rem * calc(1 - var(--tw-space-x-reverse)));
+}
+
+.space-x-8 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-x-reverse: 0;
+  margin-right: calc(2rem * var(--tw-space-x-reverse));
+  margin-left: calc(2rem * calc(1 - var(--tw-space-x-reverse)));
+}
+
+.space-y-4 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(1rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(1rem * var(--tw-space-y-reverse));
+}
+
+.grid { display: grid; }
+.grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+.gap-6 { gap: 1.5rem; }
+.col-span-full { grid-column: 1 / -1; }
+.w-full { width: 100%; }
+.p-4 { padding: 1rem; }
+.py-16 { padding-top: 4rem; padding-bottom: 4rem; }
+.px-4 { padding-left: 1rem; padding-right: 1rem; }
+.min-w-160 { min-width: 160px; }
+.mt-auto { margin-top: auto; }
+.mb-2 { margin-bottom: 0.5rem; }
+.mb-4 { margin-bottom: 1rem; }
+.mb-6 { margin-bottom: 1.5rem; }
+.mb-8 { margin-bottom: 2rem; }
+.mr-2 { margin-right: 0.5rem; }
+.mx-auto { margin-left: auto; margin-right: auto; }
+.text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+.text-base { font-size: 1rem; line-height: 1.5rem; }
+.text-lg { font-size: 1.125rem; line-height: 1.75rem; }
+.text-xl { font-size: 1.25rem; line-height: 1.75rem; }
+.font-light { font-weight: 300; }
+.font-semibold { font-weight: 600; }
+.text-white { color: #fff; }
+.text-gray-800 { color: #1f2937; }
+.text-gray-600 { color: #4b5563; }
+.text-gray-500 { color: #6b7280; }
+.text-gray-400 { color: #9ca3af; }
+.bg-white { background-color: #fff; }
+.bg-gray-900 { background-color: #111827; }
+.bg-gray-400 { background-color: #9ca3af; }
+.rounded-xl { border-radius: 20px; }
+
+.shadow-lg {
+  box-shadow:
+    0 5px 35px -10px rgba(0, 0, 0, 0.3),
+    0 10px 10px -5px rgba(0, 0, 0, 0.1);
+}
+
+.shadow-2xl {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.hover\:shadow-2xl:hover {
+  box-shadow: 0 40px 60px -15px rgba(0, 0, 0, 0.4);
+}
+
+.border { border-width: 1px; }
+.border-gray-200 { border-color: #e5e7eb; }
+.hidden { display: none; }
+.cursor-not-allowed { cursor: not-allowed; }
+.hover\:text-primary:hover { color: var(--primary-color); }
+.underline { text-decoration: underline; }
+
+@media (min-width: 768px) {
+  .md\:flex-row { flex-direction: row; }
+  .md\:items-center { align-items: center; justify-content: center; }
+  .md\:space-y-0 > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-y-reverse: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+  .md\:space-x-8 > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-x-reverse: 0;
+    margin-right: calc(2rem * var(--tw-space-x-reverse));
+    margin-left: calc(2rem * calc(1 - var(--tw-space-x-reverse)));
+  }
+  .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

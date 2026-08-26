@@ -185,15 +185,34 @@ window.startApp = async () => {
 };
 
 // --- INICIALIZACIÓN ---
+// Antes esto usaba un MutationObserver sobre todo el document (subtree +
+// childList), que se disparaba con CUALQUIER cambio del DOM, no solo con
+// una navegación real. Se reemplaza por la interceptación de pushState /
+// replaceState (que es como el router de Framer cambia de URL sin recargar
+// la página) + el evento popstate (navegación con atrás/adelante del
+// navegador). Mismo comportamiento (se sigue comparando contra
+// window.lastUrl para no reinicializar si la URL no cambió realmente, y se
+// mantiene el mismo delay de 800ms antes de reinicializar), pero sin pagar
+// el costo de observar cada mutación del DOM.
 if (!window.APP_INITIALIZED) {
     window.lastUrl = location.href;
-    new MutationObserver(() => {
+    var onUrlChange = () => {
         if (location.href !== window.lastUrl) {
             window.lastUrl = location.href;
             setTimeout(() => { window.updateCartState(); window.startApp(); }, 800);
         }
-    }).observe(document, { subtree: true, childList: true });
+    };
+    var origPushState = history.pushState;
+    history.pushState = function () {
+        origPushState.apply(this, arguments);
+        onUrlChange();
+    };
+    var origReplaceState = history.replaceState;
+    history.replaceState = function () {
+        origReplaceState.apply(this, arguments);
+        onUrlChange();
+    };
+    window.addEventListener("popstate", onUrlChange);
     window.APP_INITIALIZED = true;
 }
 window.startApp();
-
