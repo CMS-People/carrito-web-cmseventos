@@ -5,7 +5,7 @@ window.getCurrentLang = () => {
     if (path.includes('/pt')) return 'pt';
     return 'es';
 };
-
+ 
 // Antes esto llevaba "?nocache=" + Date.now() para forzar que se ignore
 // cualquier caché y se descargue el JSON entero en cada carga. Se saca el
 // query param y en su lugar el fetch de abajo pide { cache: "no-cache" }:
@@ -18,24 +18,24 @@ var EVENTS_JSON_URL = "https://gist.githubusercontent.com/CMS-People/389e604db6a
     // esta era la url del gist de mi GitHub:  "https://gist.githubusercontent.com/Lauchis/50b5ece416be0f17df01c554fd70871f/raw/eventos.json"
 // var EVENTS_JSON_URL = "https://gitlab.com/-/snippets/5980284/raw/main/eventos.json?inline=false";
 window.ALL_COUNTRIES = ["Alemania", "Argentina", "Bolivia", "Brasil", "Chile", "Colombia", "Costa Rica", "Ecuador", "El Salvador", "España", "Estados Unidos", "Francia", "Guatemala", "Honduras", "Italia", "México", "Nicaragua", "Otros", "Panamá", "Paraguay", "Perú", "Portugal", "Puerto Rico", "Reino Unido", "República Dominicana", "Uruguay", "Venezuela"].sort();
-
+ 
 var ENDPOINTS = {
     brasil: "https://formsubmit.co/ajax/c.boueri@cmspeople.com",
     europa: "https://formsubmit.co/ajax/antonio.soto@cmspeople.com",
     latam: "https://formsubmit.co/ajax/tatiana.remaggi@cmspeople.com",
     mexico: "https://formsubmit.co/ajax/tatiana.remaggi@cmspeople.com"
 };
-
+ 
 var KEY = "framer_event_cart";
 window.MOCK_EVENTS = window.MOCK_EVENTS || [];
 window.cartItems = [];
 window.isCartOpen = false;
-
+ 
 // --- FUNCIONES DE NÚCLEO ---
 window.loadCart = () => { try { return JSON.parse(localStorage.getItem(KEY)) || [] } catch (e) { return [] } };
 window.saveCart = c => { try { localStorage.setItem(KEY, JSON.stringify(c)) } catch (e) { } };
 window.loadMockEvents = async () => { if (window.MOCK_EVENTS.length > 0) return; try { var r = await fetch(EVENTS_JSON_URL, { cache: "no-cache" }); window.MOCK_EVENTS = await r.json() } catch (e) { } };
-
+ 
 var D = {};
 var rf = () => {
     D = {
@@ -56,16 +56,16 @@ var rf = () => {
         closeError: document.getElementById("close-error-btn-global")
     };
 };
-
+ 
 window.updateCartState = () => {
     rf();
     window.saveCart(window.cartItems);
     if (!D.count) return;
-
+ 
     const lang = window.getCurrentLang();
     D.count.textContent = window.cartItems.length;
     D.count.style.display = window.cartItems.length > 0 ? "flex" : "none";
-
+ 
     if (window.cartItems.length > 0) {
         D.items.innerHTML = window.cartItems.map(i => {
             const tTitle = (i.title && typeof i.title === 'object') ? (i.title[lang] || i.title['es']) : (i.title || "");
@@ -87,7 +87,7 @@ window.updateCartState = () => {
         if (D.form) D.form.style.display = "none";
     }
 };
-
+ 
 window.addToCart = id => {
     var check = () => {
         if (!window.MOCK_EVENTS?.length) { setTimeout(check, 50); return; }
@@ -99,9 +99,9 @@ window.addToCart = id => {
         }
     }; check();
 };
-
+ 
 window.removeFromCart = id => { window.cartItems = window.cartItems.filter(i => i.id !== id); window.updateCartState(); };
-
+ 
 window.getEndpoint = () => {
     var r = [...new Set(window.cartItems.map(i => i.region))];
     if (r.includes("Europa")) return ENDPOINTS.europa;
@@ -109,14 +109,14 @@ window.getEndpoint = () => {
     if (r.includes("Mexico")) return ENDPOINTS.mexico;
     return ENDPOINTS.latam;
 };
-
+ 
 window.toggleCart = o => {
     rf();
     window.isCartOpen = typeof o === "boolean" ? o : !window.isCartOpen;
     if (D.cart) D.cart.style.transform = window.isCartOpen ? "translateX(0)" : "translateX(100%)";
     if (D.openBtn) D.openBtn.style.display = window.isCartOpen ? "none" : "flex";
 };
-
+ 
 var handleFormSubmit = async e => {
     e.preventDefault();
     if (!window.cartItems.length) return;
@@ -135,7 +135,7 @@ var handleFormSubmit = async e => {
     } catch (x) { D.error.style.display = "flex" }
     finally { D.submit.disabled = false; D.submit.textContent = "Enviar Solicitud" }
 };
-
+ 
 var popSel = () => {
     rf();
     if (D.select && D.select.options.length <= 1) {
@@ -146,7 +146,7 @@ var popSel = () => {
         });
     }
 };
-
+ 
 window.startApp = async () => {
     window.cartItems = window.loadCart();
     await window.loadMockEvents();
@@ -164,16 +164,16 @@ window.startApp = async () => {
             document.addEventListener("click", e => {
                 if (window.isCartOpen && D.cart && !D.cart.contains(e.target) && !D.openBtn.contains(e.target)) window.toggleCart(false);
             });
-
+ 
             popSel();
-
+ 
             // --- INICIO DE LA AGREGRACIÓN DE COPIAS (CC) ---
             if (D.form) {
                 if (!D.form.querySelector('input[name="_cc"]')) {
                     var ccInput = document.createElement("input");
                     ccInput.type = "hidden";
                     ccInput.name = "_cc";
-                    ccInput.value = "juan.lopez@cmspeople.com,szubillaga@cmspeople.com";
+                    ccInput.value = "martina.delucchi@cmspeople.com,szubillaga@cmspeople.com";
                     D.form.appendChild(ccInput);
                 }
                 if (!D.form.querySelector('input[name="_subject"]')) {
@@ -185,13 +185,13 @@ window.startApp = async () => {
                 }
             }
             // --- FIN DE LA AGREGACIÓN ---
-
+ 
             window.updateCartState();
         } else { setTimeout(ck, 300) }
     };
     ck();
 };
-
+ 
 // --- INICIALIZACIÓN ---
 // Antes esto usaba un MutationObserver sobre todo el document (subtree +
 // childList), que se disparaba con CUALQUIER cambio del DOM, no solo con
@@ -224,3 +224,4 @@ if (!window.APP_INITIALIZED) {
     window.APP_INITIALIZED = true;
 }
 window.startApp();
+ 
