@@ -34,7 +34,42 @@ window.isCartOpen = false;
 // --- FUNCIONES DE NÚCLEO ---
 window.loadCart = () => { try { return JSON.parse(localStorage.getItem(KEY)) || [] } catch (e) { return [] } };
 window.saveCart = c => { try { localStorage.setItem(KEY, JSON.stringify(c)) } catch (e) { } };
-window.loadMockEvents = async () => { if (window.MOCK_EVENTS.length > 0) return; try { var r = await fetch(EVENTS_JSON_URL, { cache: "no-cache" }); window.MOCK_EVENTS = await r.json() } catch (e) { } };
+ 
+// window.EVENTS_LOAD_FAILED indica si, tras agotar el reintento de abajo, no
+// se pudo traer eventos.json. addToCart lo usa para no quedar esperando para
+// siempre (ver diagnostico-carrito.md, "Manejo de falla al cargar eventos").
+window.EVENTS_LOAD_FAILED = false;
+ 
+// Un solo intento de fetch, con timeout de 8s (antes no tenía ninguno: un
+// fetch colgado podía bloquear la carga de eventos indefinidamente).
+var fetchEventsOnce = async () => {
+    var controller = new AbortController();
+    var timeoutId = setTimeout(() => controller.abort(), 8000);
+    try {
+        var r = await fetch(EVENTS_JSON_URL, { cache: "no-cache", signal: controller.signal });
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return await r.json();
+    } finally {
+        clearTimeout(timeoutId);
+    }
+};
+ 
+window.loadMockEvents = async () => {
+    if (window.MOCK_EVENTS.length > 0) return;
+    try {
+        window.MOCK_EVENTS = await fetchEventsOnce();
+        window.EVENTS_LOAD_FAILED = false;
+    } catch (e1) {
+        // Reintento único ante fallas transitorias (red lenta, timeout, Gist
+        // caído un instante, etc.) antes de darnos por vencidos.
+        try {
+            window.MOCK_EVENTS = await fetchEventsOnce();
+            window.EVENTS_LOAD_FAILED = false;
+        } catch (e2) {
+            window.EVENTS_LOAD_FAILED = true;
+        }
+    }
+};
  
 var D = {};
 var rf = () => {
@@ -88,9 +123,25 @@ window.updateCartState = () => {
     }
 };
  
+// Antes, si eventos.json no llegaba a cargar nunca, este polling se quedaba
+// reintentando cada 50ms para siempre y el usuario no se enteraba de nada.
+// Ahora corta cuando EVENTS_LOAD_FAILED queda en true (loadMockEvents ya
+// agotó su reintento) o, como red de seguridad, a los 20s (maxAttempts), y
+// avisa reutilizando el modal de error que ya existe para el formulario.
 window.addToCart = id => {
+    var attempts = 0;
+    var maxAttempts = 400; // ~20s a 50ms por intento
     var check = () => {
-        if (!window.MOCK_EVENTS?.length) { setTimeout(check, 50); return; }
+        if (!window.MOCK_EVENTS?.length) {
+            if (window.EVENTS_LOAD_FAILED || attempts >= maxAttempts) {
+                rf();
+                if (D.error) D.error.style.display = "flex";
+                return;
+            }
+            attempts++;
+            setTimeout(check, 50);
+            return;
+        }
         var e = window.MOCK_EVENTS.find(x => x.id === id);
         if (e && !window.cartItems.some(i => i.id === id)) {
             window.cartItems.push(e);
@@ -149,7 +200,13 @@ var popSel = () => {
  
 window.startApp = async () => {
     window.cartItems = window.loadCart();
-    await window.loadMockEvents();
+    // No se espera (sin "await") a que terminen de cargarse los eventos antes
+    // de conectar los botones, el panel y el formulario: si el fetch a
+    // eventos.json tarda o falla, el carrito (abrir/cerrar, ítems ya
+    // guardados en localStorage, envío del formulario) sigue funcionando
+    // igual. addToCart ya maneja por su cuenta la espera/timeout de
+    // MOCK_EVENTS. Ver diagnostico-carrito.md.
+    window.loadMockEvents();
     var ck = () => {
         rf();
         if (D.openBtn && document.body.contains(D.openBtn)) {
@@ -182,6 +239,23 @@ window.startApp = async () => {
                     subInput.name = "_subject";
                     subInput.value = "Eventos seleccionados - Web CMS Eventos";
                     D.form.appendChild(subInput);
+                }
+                // Honeypot anti-spam de FormSubmit: campo oculto llamado
+                // "_honey" (nombre fijo que exige FormSubmit). Un usuario real
+                // nunca lo ve ni lo completa (display:none + fuera del tab
+                // order); si un bot lo completa, FormSubmit descarta el envío
+                // en silencio. Mitiga el riesgo ya documentado de que los
+                // endpoints de FormSubmit están expuestos en este archivo
+                // público. No reemplaza la restricción por dominio permitido
+                // en el panel de FormSubmit, que sigue pendiente de revisar.
+                if (!D.form.querySelector('input[name="_honey"]')) {
+                    var honeyInput = document.createElement("input");
+                    honeyInput.type = "text";
+                    honeyInput.name = "_honey";
+                    honeyInput.style.display = "none";
+                    honeyInput.tabIndex = -1;
+                    honeyInput.autocomplete = "off";
+                    D.form.appendChild(honeyInput);
                 }
             }
             // --- FIN DE LA AGREGACIÓN ---
