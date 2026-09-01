@@ -35,9 +35,10 @@ window.isCartOpen = false;
 window.loadCart = () => { try { return JSON.parse(localStorage.getItem(KEY)) || [] } catch (e) { return [] } };
 window.saveCart = c => { try { localStorage.setItem(KEY, JSON.stringify(c)) } catch (e) { } };
  
-// window.EVENTS_LOAD_FAILED indica si, tras agotar el reintento de abajo, no
-// se pudo traer eventos.json. addToCart lo usa para no quedar esperando para
-// siempre (ver diagnostico-carrito.md, "Manejo de falla al cargar eventos").
+// window.EVENTS_LOAD_FAILED indica si, tras agotar los reintentos de abajo,
+// no se pudo traer eventos.json. addToCart lo usa para no quedar esperando
+// para siempre (ver diagnostico-carrito.md, "Manejo de falla al cargar
+// eventos").
 window.EVENTS_LOAD_FAILED = false;
  
 // Un solo intento de fetch, con timeout de 8s (antes no tenía ninguno: un
@@ -56,17 +57,17 @@ var fetchEventsOnce = async () => {
  
 window.loadMockEvents = async () => {
     if (window.MOCK_EVENTS.length > 0) return;
-    try {
-        window.MOCK_EVENTS = await fetchEventsOnce();
-        window.EVENTS_LOAD_FAILED = false;
-    } catch (e1) {
-        // Reintento único ante fallas transitorias (red lenta, timeout, Gist
-        // caído un instante, etc.) antes de darnos por vencidos.
+    // 1 intento inicial + 2 reintentos ante fallas transitorias (red lenta,
+    // timeout, Gist caído un instante, etc.), 8s como máximo cada uno —
+    // hasta ~24s en el peor caso antes de darnos por vencidos.
+    var maxIntentos = 3;
+    for (var i = 0; i < maxIntentos; i++) {
         try {
             window.MOCK_EVENTS = await fetchEventsOnce();
             window.EVENTS_LOAD_FAILED = false;
-        } catch (e2) {
-            window.EVENTS_LOAD_FAILED = true;
+            return;
+        } catch (e) {
+            if (i === maxIntentos - 1) window.EVENTS_LOAD_FAILED = true;
         }
     }
 };
@@ -126,11 +127,12 @@ window.updateCartState = () => {
 // Antes, si eventos.json no llegaba a cargar nunca, este polling se quedaba
 // reintentando cada 50ms para siempre y el usuario no se enteraba de nada.
 // Ahora corta cuando EVENTS_LOAD_FAILED queda en true (loadMockEvents ya
-// agotó su reintento) o, como red de seguridad, a los 20s (maxAttempts), y
-// avisa reutilizando el modal de error que ya existe para el formulario.
+// agotó sus reintentos, hasta ~24s) o, como red de seguridad, a los 30s
+// (maxAttempts), y avisa reutilizando el modal de error que ya existe para
+// el formulario.
 window.addToCart = id => {
     var attempts = 0;
-    var maxAttempts = 400; // ~20s a 50ms por intento
+    var maxAttempts = 600; // ~30s a 50ms por intento (con margen sobre los ~24s de loadMockEvents)
     var check = () => {
         if (!window.MOCK_EVENTS?.length) {
             if (window.EVENTS_LOAD_FAILED || attempts >= maxAttempts) {
