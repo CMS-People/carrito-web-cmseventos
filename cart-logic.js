@@ -26,6 +26,30 @@ var ENDPOINTS = {
     mexico: "https://formsubmit.co/ajax/tatiana.remaggi@cmspeople.com"
 };
  
+// FormSubmit.co solo admite UN destinatario "principal" por endpoint (el
+// email que va en la URL de ENDPOINTS de arriba) — no soporta dos
+// direcciones como destinatarias directas de un mismo envío. Para sumar
+// gente sin tocar el destinatario principal se usa el campo oculto "_cc"
+// (copia), que sí admite varias direcciones separadas por coma.
+//
+// CC_BASE va en copia de TODAS las regiones (como ya era). CC_EUROPA_EXTRA
+// se suma solo cuando el envío corresponde a Europa (ENDPOINTS.europa) —
+// agregado el 2026-09-02 a pedido para que fernando.maquez@cmspeople.com
+// reciba en copia los formularios de Europa además de Antonio (destinatario
+// principal), sin sumarlo a Brasil/Latam/México.
+var CC_BASE = "martina.delucchi@cmspeople.com,szubillaga@cmspeople.com";
+var CC_EUROPA_EXTRA = "fernando.maquez@cmspeople.com";
+ 
+// Arma la lista de "_cc" según la región del carrito en este momento
+// (misma lógica de prioridad que getEndpoint): CC_BASE siempre, más
+// CC_EUROPA_EXTRA únicamente si el endpoint que se va a usar es el de
+// Europa.
+window.getCcAddresses = () => {
+    var cc = CC_BASE;
+    if (window.getEndpoint() === ENDPOINTS.europa) cc += "," + CC_EUROPA_EXTRA;
+    return cc;
+};
+ 
 var KEY = "framer_event_cart";
 window.MOCK_EVENTS = window.MOCK_EVENTS || [];
 window.cartItems = [];
@@ -177,6 +201,15 @@ var handleFormSubmit = async e => {
     D.submit.disabled = true;
     D.submit.textContent = "Enviando...";
     try {
+        // El "_cc" se recalcula acá (no alcanza con el valor fijo que se le
+        // puso al crear el input en startApp): el carrito puede haber
+        // cambiado de región entre que se abrió el panel y este submit, así
+        // que releemos la región actual justo antes de armar el FormData
+        // para que fernando.maquez@cmspeople.com solo vaya en copia cuando
+        // el envío es realmente de Europa.
+        var ccInput = D.form.querySelector('input[name="_cc"]');
+        if (ccInput) ccInput.value = window.getCcAddresses();
+ 
         var r = await fetch(window.getEndpoint(), { method: "POST", body: new FormData(D.form) });
         if (r.ok) {
             window.toggleCart(false);
@@ -232,7 +265,10 @@ window.startApp = async () => {
                     var ccInput = document.createElement("input");
                     ccInput.type = "hidden";
                     ccInput.name = "_cc";
-                    ccInput.value = "martina.delucchi@cmspeople.com,szubillaga@cmspeople.com";
+                    // Valor inicial; se recalcula en handleFormSubmit según
+                    // la región del carrito en el momento del envío (ver
+                    // getCcAddresses más arriba).
+                    ccInput.value = window.getCcAddresses();
                     D.form.appendChild(ccInput);
                 }
                 if (!D.form.querySelector('input[name="_subject"]')) {
