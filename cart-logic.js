@@ -6,6 +6,65 @@ window.getCurrentLang = () => {
     return 'es';
 };
  
+// --- TEXTOS Y LÓGICA COMPARTIDA ENTRE LOS EMBEDS DE HOME Y /EVENTOS ---
+// Antes esto vivía duplicado (con contenido idéntico, salvo yearLabel/
+// yearAllOption que solo usa events) en el <script> de "embed home.html" y
+// "embed events.html". Se centraliza acá porque cart-logic.js ya se carga
+// una sola vez por página (no una vez por iframe, como los embeds), así que
+// esto no agrega ningún archivo ni request nuevo: los embeds lo consumen
+// cruzando el iframe con window.parent.*, igual que ya hacen con
+// getCurrentLang/addToCart/toggleCart. Ver diagnostico-carrito.md,
+// "Consolidar lógica JS repetida entre los dos embeds".
+window.UI_TEXTS = {
+    noEventsTitle: { es: "¡Vaya!", en: "Oops!", pt: "Ops!" },
+    noEventsBody: {
+        es: "No hay eventos con estos criterios.",
+        en: "There are no events with these filters.",
+        pt: "Não há eventos com esses filtros."
+    },
+    brochure: { es: "Ver Brochure", en: "View Brochure", pt: "Ver Brochure" },
+    event: { es: "Ver Evento", en: "View Event", pt: "Ver Evento" },
+    video: { es: "Ver Video", en: "Watch Video", pt: "Ver Vídeo" },
+    interest: { es: "Me interesa", en: "I'm interested", pt: "Tenho interesse" },
+    here: { es: "aquí", en: "here", pt: "aqui" },
+    regionLabel: { es: "Región:", en: "Region:", pt: "Região:" },
+    segmentLabel: { es: "Segmento:", en: "Segment:", pt: "Segmento:" },
+    yearLabel: { es: "Año:", en: "Year:", pt: "Ano:" },
+    regionAllOption: { es: "Todas", en: "All", pt: "Todas" },
+    segmentAllOption: { es: "Todos", en: "All", pt: "Todos" },
+    yearAllOption: { es: "Todos", en: "All", pt: "Todos" }
+};
+ 
+// Reemplaza los t()/getLang() locales que tenía cada embed para sus textos
+// fijos de interfaz: busca la traducción de "key" en window.UI_TEXTS según
+// el idioma actual de la página (getCurrentLang, definida arriba).
+window.getUIText = (key) => {
+    const lang = window.getCurrentLang();
+    const item = window.UI_TEXTS[key];
+    if (!item) return "";
+    return item[lang] || item.es || "";
+};
+ 
+// Reemplaza el bloque de ordenamiento cronológico que estaba duplicado,
+// palabra por palabra, en renderEventList() de los dos embeds: separa
+// "events" (ya filtrado por región/segmento/año) en próximos (>= hoy,
+// ascendente) y pasados (< hoy, descendente), y devuelve la concatenación.
+// Ver diagnostico-carrito.md, "Ordenamiento automático de eventos".
+window.sortEventsChronologically = (events) => {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const upcoming = [];
+    const past = [];
+    events.forEach((event) => {
+        const eventDate = new Date(event.startDate);
+        if (eventDate >= now) upcoming.push(event);
+        else past.push(event);
+    });
+    upcoming.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+    past.sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
+    return [...upcoming, ...past];
+};
+ 
 // Antes esto llevaba "?nocache=" + Date.now() para forzar que se ignore
 // cualquier caché y se descargue el JSON entero en cada carga. Se saca el
 // query param y en su lugar el fetch de abajo pide { cache: "no-cache" }:
@@ -198,18 +257,15 @@ var handleFormSubmit = async e => {
     e.preventDefault();
     if (!window.cartItems.length) return;
     rf();
+    // Recalcula el _cc justo antes de enviar (no alcanza con el valor fijado
+    // al crear el campo): el carrito puede haber cambiado de región entre
+    // que se abrió el panel y este envío. Ver "CC condicional a Europa..."
+    // en diagnostico-carrito.md.
+    var ccField = D.form.querySelector('input[name="_cc"]');
+    if (ccField) ccField.value = window.getCcAddresses();
     D.submit.disabled = true;
     D.submit.textContent = "Enviando...";
     try {
-        // El "_cc" se recalcula acá (no alcanza con el valor fijo que se le
-        // puso al crear el input en startApp): el carrito puede haber
-        // cambiado de región entre que se abrió el panel y este submit, así
-        // que releemos la región actual justo antes de armar el FormData
-        // para que fernando.maquez@cmspeople.com solo vaya en copia cuando
-        // el envío es realmente de Europa.
-        var ccInput = D.form.querySelector('input[name="_cc"]');
-        if (ccInput) ccInput.value = window.getCcAddresses();
- 
         var r = await fetch(window.getEndpoint(), { method: "POST", body: new FormData(D.form) });
         if (r.ok) {
             window.toggleCart(false);
@@ -265,10 +321,7 @@ window.startApp = async () => {
                     var ccInput = document.createElement("input");
                     ccInput.type = "hidden";
                     ccInput.name = "_cc";
-                    // Valor inicial; se recalcula en handleFormSubmit según
-                    // la región del carrito en el momento del envío (ver
-                    // getCcAddresses más arriba).
-                    ccInput.value = window.getCcAddresses();
+                    ccInput.value = CC_BASE;
                     D.form.appendChild(ccInput);
                 }
                 if (!D.form.querySelector('input[name="_subject"]')) {
